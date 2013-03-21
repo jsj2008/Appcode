@@ -1,0 +1,28 @@
+//
+//  AUVConstants.h
+//  AppUniv
+//
+//  Created by Jagadeesh Deivasigamani on 05/07/12.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+#import <UIKit/UIKit.h>
+#import "AUVAppDelegate.h"
+#define AUVFB_APPID  @"314252848686520"// @"257769047669205" //@"406924332677177"
+#define AUVFBACCESSTOKENKEY @"FBAccessTokenKey"
+#define AUVFBEXPIRATIONDATEKEY @"FBExpirationDateKey"
+#define AUV_DELEGATE  (AUVAppDelegate*)[[UIApplication sharedApplication] delegate]
+#define AUVFRAME [[UIScreen mainScreen] applicationFrame]
+#define AUVAPPNAME @"AppUniv"
+#define AUVFBNotification @"FBloggedIn"
+#define AUVNotification @"Push"
+
+#define AUVTwitterNotification @"TwitterloggedIn"
+#define AUVCategoryNotification @"CategorySelected"
+#define AUVBaseURL @"http://appfindy.com"
+#define FLURRYKEY @"ZGKKF76NVXDYW736C45R"
+#define IS_IPHONE_5                      ( fabs( ( double )[ [ UIScreen mainScreen ] bounds ].size.height - ( double )568 ) < DBL_EPSILON )
+
+
+
+#define Rating_empty                 [UIImage imageNamed:@"star_empty.png"]
+#define Rating_full                  [UIImage imageNamed:@"star_full.png"]

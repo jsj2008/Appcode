@@ -1,0 +1,715 @@
+//
+//  AUVCommentsViewController.m
+//  AppUniv
+//
+//  Created by Jagadeesh Deivasigamani on 10/08/12.
+//
+//
+
+#import "AUVCommentsViewController.h"
+#import "DAKeyboardControl.h"
+#import "AUVwebservice.h"
+#import "JSON.h"
+#import "UIImageView+AFNetworking.h"
+#import "AUVQuestionViewController.h"
+#import "AUVAnswerViewController.h"
+#import "AUVLogin.h"
+#import "SVProgressHUD.h"
+#import "AUVQuestionViewController.h"
+#import "AUVDevsViewController.h"
+
+#import "SVPullToRefresh.h"
+#import "UIImageView+AFNetworking.h"
+#import "StyledPullableView.h"
+
+#import "AUVCustomTabbar.h"
+#import "AUVAppWallController.h"
+#import "AUVNotificationViewController.h"
+#import "AUVQuestionChoiceViewController.h"
+#import "AUVSearchViewController.h"
+#import "AUVDealsViewController.h"
+#import "AUVScrollTabBar.h"
+
+@interface AUVCommentsViewController ()
+
+
+@end
+
+@implementation AUVCommentsViewController
+@synthesize appId,categoryId,type,commentsTable;
+UITextField *textField;
+UIButton *sendButton;
+
+int istart=0;
+
+int commentdatloadingflag=0;
+
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    // Do any additional setup after loading the view from its nib.
+
+    
+     tableArray=[[NSMutableArray alloc] init];
+    
+    
+   self.navigationItem.backBarButtonItem=[[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStylePlain target:nil action:nil];
+    commentsTable.separatorStyle=UITableViewCellSeparatorStyleNone;
+    // livelyTableView.backgroundColor=[UIColor greenColor];
+    __unsafe_unretained AUVCommentsViewController *cvc=self;
+    [self.commentsTable addInfiniteScrollingWithActionHandler:^{
+        
+        
+        [cvc performSelectorOnMainThread:@selector(loadComments) withObject:nil waitUntilDone:YES];
+        
+        [commentsTable.infiniteScrollingView performSelector:@selector(stopAnimating) withObject:nil afterDelay:1];
+    }];
+    
+//    AUVCustomTabbar *custombar  =[[AUVCustomTabbar alloc]init];
+//    custombar.delegate= self;
+//    
+//    [self.view addSubview:custombar];
+    
+    AUVScrollTabBar *custombar  =[[AUVScrollTabBar alloc]initWithFrame:CGRectMake(0, 375, 320, 44)];
+    [custombar.button3 setImage:[UIImage imageNamed:@"deals1.png"] forState:UIControlStateNormal];
+    custombar.delegate= self;
+    [self.view addSubview:custombar];
+
+      
+}
+-(void)btnTap:(UIButton*)buttonId
+
+{
+    
+    int buttonselect = buttonId.tag;
+    
+    if (buttonselect == 1) {
+        
+        AUVwallcontrollerViewController *notification = [[AUVwallcontrollerViewController alloc]initWithNibName:@"AUVwallcontrollerViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 2){
+        
+        AUVSearchViewController *notification = [[AUVSearchViewController alloc]initWithNibName:@"AUVSearchViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+        
+    }else if (buttonselect == 3){
+        
+        AUVDealsViewController *deal=[[AUVDealsViewController alloc]initWithNibName:@"AUVDealsViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:deal animated:YES];
+    }else if (buttonselect == 4){
+        
+        AUVSearchViewController *notification = [[AUVSearchViewController alloc]initWithNibName:@"AUVSearchViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 5){
+        
+        
+    }
+    else{
+        
+        //NSLog(@"nothing");
+        
+    }
+    
+}
+
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+   
+    [self loadComments];
+    
+    
+    adddiscusstionorcomment =[[UIBarButtonItem alloc] initWithTitle:@"Add Discussion " style:UIBarButtonItemStylePlain target:self action:@selector(addAnswer:)];
+        
+   
+
+    if(self.type==Comment)
+    {
+        self.title=@"Comment";
+        adddiscusstionorcomment.title=@"Add Comment";
+      // [comment setTitle:@"Add Comment" forState:UIControlStateNormal];
+    }
+    else if(self.type==question)
+    {
+         self.title=@"Discussion";
+        adddiscusstionorcomment.title=@"Add Discussion";
+      // [comment setTitle:@"Add Question" forState:UIControlStateNormal];
+    }
+         self.navigationItem.rightBarButtonItem=adddiscusstionorcomment;
+}
+
+-(void)viewDidDisappear:(BOOL)animated
+{
+    
+    [SVProgressHUD dismiss];
+    [super viewDidDisappear:animated];
+}
+
+- (void)viewDidUnload
+{
+       
+    [super viewDidUnload];
+    // Release any retained subviews of the main view.
+    // e.g. self.myOutlet = nil;
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+
+
+
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+     [self commentsAction:textField.text withArg2:@"data"];
+    [textField resignFirstResponder];
+    return YES;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField
+{
+    sendButton.enabled=YES;
+}
+
+
+
+
+-(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+//    if(textField.text.length!=0){
+//    if(string.length!=0) sendButton.enabled=YES;
+//    }
+//    else
+//        sendButton.enabled=NO;
+    
+    
+    //sendButton.enabled=YES;
+    
+    //if(textField.text.length  > string.length) sendButton.enabled=NO;
+    
+    return YES;
+}
+
+-(void)Addcomment
+{
+    [textField resignFirstResponder];
+    [self commentsAction:textField.text withArg2:@"data"];
+}
+
+
+
+
+-(void)commentsAction:(NSString*)comment withArg2:(NSString*)apptitle
+{
+     
+    textField.text=@"";
+    sendButton.enabled=NO;
+    AUVwebservice *service=[AUVwebservice service];
+   // service.logging=NO;
+    NSUserDefaults *defaults=[NSUserDefaults standardUserDefaults];
+    
+    if(self.type==Comment)
+    [service appcomment:self action:@selector(commentActionHandler:) user_id:[defaults valueForKey:@"user_id"] app_id:appId comment:comment];
+    else if(self.type==question)
+    [service question:self action:@selector(commentActionHandler:) category_id:categoryId app_id:appId user_id:[defaults valueForKey:@"user_id"] question:apptitle description:comment];
+    
+    // [service app_details:self action:@selector(detailHandler:) appid:appId];
+    //[service get_appdetails:self action:@selector(detailHandler:) appid:appId];
+}
+
+-(void)commentActionHandler:(id)value
+{
+	// Handle errors
+    if([value isKindOfClass:[NSError class]] ||([value isKindOfClass:[SoapFault class]])) {
+        
+		[SVProgressHUD showErrorWithStatus:@"Sorry, the request was unsuccessful"];
+	}
+    
+    else{
+	// Do something with the Array* result
+    SoapArray* arr = (SoapArray*)value;
+    [SVProgressHUD dismiss];
+    //NSLog(@"arrrr : %@",arr);
+    
+    NSString *result=[[NSString stringWithFormat:@"%@",[arr objectAtIndex:0]] stringByReplacingOccurrencesOfString:@"\\" withString:@""];
+    //NSLog(@"result : %@",[result JSONValue]);
+    [tableArray removeAllObjects];
+
+        
+    if(self.type==Comment){
+    for (NSDictionary * dict in [[result JSONValue] valueForKey:@"comment"]) {
+    // //NSLog( @"%@: %@",[dict valueForKey:@"key"],[dict valueForKey:@"value"]);
+   // [appDic setValue:[dict valueForKey:@"value"] forKey:[dict valueForKey:@"key"]];
+    
+        [tableArray addObject:dict];
+     }
+    [commentsTable reloadData];
+    
+    }
+    else if(self.type==question)
+    {
+        NSDictionary *dict=[result JSONValue];
+        
+        AUVQuestionViewController *question=[[AUVQuestionViewController alloc] initWithNibName:@"AUVQuestionViewController" bundle:nil];
+        question.questionId=[NSString stringWithFormat:@"%@",[dict valueForKey:@"question_id"]];
+        question.info=[[NSMutableDictionary alloc] initWithDictionary:dict];
+        
+        [self.navigationController pushViewController:question animated:YES];
+    }
+    }
+}
+
+-(void)loadComments
+{
+    
+   
+    if(commentdatloadingflag==0)
+    {
+    
+        AUVwebservice *service=[AUVwebservice service];
+        if(tableArray.count!=0)
+        {
+            istart=istart+10;
+        }else
+        {
+            [SVProgressHUD showWithMaskType:SVProgressHUDMaskTypeBlack];
+            istart=0;
+        }
+        
+        commentdatloadingflag=1;
+    
+        if(self.type==Comment)
+        {
+            [service get_comment:self action:@selector(loadCommentsHandler:) app_id:appId limit:@"10" offset:[NSString stringWithFormat:@"%d",istart]];
+        }
+        else if(self.type==question)
+        {
+        
+            [service get_question:self action:@selector(loadCommentsHandler:) category_id:@"0" app_id:appId user_id:[AUVLogin valueforKey:@"user_id"] start:[NSString stringWithFormat:@"%d",istart] end:@"10"];
+        }
+    }
+    
+}
+
+
+
+
+-(void)loadCommentsHandler:(id)value
+{
+    
+    
+    
+	// Handle errors
+	if([value isKindOfClass:[NSError class]]) {
+		//NSLog(@"%@", value);
+         [SVProgressHUD dismiss];
+		return;
+	}
+    
+	// Handle faults
+	if([value isKindOfClass:[SoapFault class]]) {
+		//NSLog(@"%@", value);
+         [SVProgressHUD dismiss];
+		return;
+	}
+    
+    
+	// Do something with the Array* result
+    SoapArray* arr = (SoapArray*)value;
+    [SVProgressHUD dismiss];
+    //NSLog(@"arr");
+    
+    NSString *result=[[NSString stringWithFormat:@"%@",[arr objectAtIndex:0]] stringByReplacingOccurrencesOfString:@"\\" withString:@""];
+    //NSLog(@"result : %@",[result JSONValue]);
+    
+    
+    commentdatloadingflag=0;
+   
+    
+    if(self.type==Comment)
+    for (NSDictionary * dict in [[result JSONValue] valueForKey:@"comments"]) {
+        // //NSLog( @"%@: %@",[dict valueForKey:@"key"],[dict valueForKey:@"value"]);
+        // [appDic setValue:[dict valueForKey:@"value"] forKey:[dict valueForKey:@"key"]];
+        
+        [tableArray addObject:dict];
+    }
+    else if(self.type==question)
+        for (NSDictionary * dict in [[result JSONValue] valueForKey:@"question_list"]) {
+            // //NSLog( @"%@: %@",[dict valueForKey:@"key"],[dict valueForKey:@"value"]);
+            // [appDic setValue:[dict valueForKey:@"value"] forKey:[dict valueForKey:@"key"]];
+            
+            [tableArray addObject:dict];
+        }
+
+    
+    
+    [self.commentsTable  reloadData];
+    // [self updateDetails];
+}
+
+
+
+
+
+
+
+
+#pragma mark -
+#pragma mark UITableViewDataSource
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return tableArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+   
+    NSString *identifier = @"TableCell";
+     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    if(self.type==Comment){
+    
+    
+   // UITableViewCell *cell=nil;
+    UILabel *name;
+    UILabel *comment;
+    UILabel *time;
+    UIView *baseView;
+   UIImageView *icon;
+	
+	if(cell !=nil){
+		cell=nil;
+	}
+    
+    
+    if (cell == nil)
+    {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+        
+        
+        
+        cell.backgroundColor=[UIColor clearColor];
+        
+         baseView=[[UIView alloc] initWithFrame:cell.frame];
+        
+        baseView.backgroundColor=[UIColor clearColor];
+        
+        name=[[UILabel alloc] initWithFrame:CGRectMake(65, 5, 260, 23)];
+        name.textColor=[UIColor blueColor];
+        name.font=[UIFont systemFontOfSize:15];
+        name.backgroundColor=[UIColor clearColor];
+        comment =[[UILabel alloc] initWithFrame:CGRectMake(65, 25, 260, 45)];
+        comment.numberOfLines=2;
+        comment.font=[UIFont systemFontOfSize:13];
+        comment.backgroundColor=[UIColor clearColor];
+        
+        icon=[[UIImageView alloc] initWithFrame:CGRectMake(5, 2, 48, 54)];
+        
+        icon.layer.cornerRadius=8;
+        icon.clipsToBounds=YES;
+        
+        time=[[UILabel alloc] initWithFrame:CGRectMake(5, 60, 310, 25)];
+        time.font=[UIFont systemFontOfSize:10];
+        time.backgroundColor=[UIColor clearColor];
+        time.textColor=[UIColor grayColor];
+        time.textAlignment=UITextAlignmentRight;
+        
+        UIImageView *line=[[UIImageView alloc] initWithFrame:CGRectMake(0, 90, 320, 2)];
+        line.image=[UIImage imageNamed:@"seprater"];
+
+        [baseView addSubview:name];
+        [baseView addSubview:icon];
+        [baseView addSubview:comment];
+        [baseView addSubview:time];
+        [baseView addSubview:line];
+        [cell addSubview:baseView];
+    }
+    //
+    //cell.backgroundColor=[UIColor redColor];
+//    CALayer *layer = cell.layer;
+//    layer.borderColor = [[UIColor blackColor] CGColor];
+//    layer.borderWidth = 1.0f;
+//    //layer.cornerRadius = 20.0f;
+//    cell.layer.cornerRadius=10;
+//    cell.layer.shadowRadius=10.0f;
+//    
+    
+   // NSDictionary *tableDict=[tableArray objectAtIndex:indexPath.row];
+   // //NSLog(@"Table dict : %@",tableDict);
+    
+    
+   
+    
+    name.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"firstname"]];
+    name.tag=[[[tableArray objectAtIndex:indexPath.row] valueForKey:@"user_id"] integerValue];
+    comment.text=[[tableArray objectAtIndex:indexPath.row] valueForKey:@"comment"];
+    time.text=[[tableArray objectAtIndex:indexPath.row] valueForKey:@"added_time"];
+    [icon setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"picture"]]] placeholderImage:[UIImage imageNamed:@"placeholder"]];
+    
+   // cell.selectionStyle=UITableViewCellSelectionStyleNone;
+}
+    
+    
+    if(self.type==question){
+        
+        UILabel *name;
+        UILabel *qHeader;
+       // UILabel *question;
+        UILabel *time;
+        UILabel *ans;
+        UILabel *loved;
+        UIView *baseView;
+        UIButton *followBtn;
+        UIImageView *icon;
+        
+        if(cell !=nil){
+            cell=nil;
+        }
+        
+        
+        if (cell == nil)
+        {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+            
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            
+            cell.backgroundColor=[UIColor clearColor];
+            baseView=[[UIView alloc] initWithFrame:cell.frame];
+            
+            baseView.backgroundColor=[UIColor clearColor];
+            
+            
+            
+            name=[[UILabel alloc] initWithFrame:CGRectMake(65, 2, 242, 20)];
+            name.numberOfLines=1;
+            name.textColor=[UIColor blueColor];
+            name.font=[UIFont systemFontOfSize:13];
+            name.backgroundColor=[UIColor clearColor];
+            
+           // icon =[[UIImageView alloc] initWithFrame:CGRectMake(5, 2, 40, 30)];
+            icon=[[UIImageView alloc] initWithFrame:CGRectMake(5, 2, 50, 55)];
+            
+            icon.layer.cornerRadius=8;
+            icon.clipsToBounds=YES;
+            
+            qHeader=[[UILabel alloc] initWithFrame:CGRectMake(65, 2, 242, 60)];
+            qHeader.numberOfLines=2;
+            //qHeader.textColor=[UIColor blueColor];
+            qHeader.font=[UIFont systemFontOfSize:13];
+            qHeader.backgroundColor=[UIColor clearColor];
+            
+            
+          /*  question =[[UILabel alloc] initWithFrame:CGRectMake(5, 65, 310, 75)];
+            question.numberOfLines=4;
+            question.font=[UIFont systemFontOfSize:12];
+            question.backgroundColor=[UIColor clearColor];*/
+            
+            UIImageView *ansI=[[UIImageView alloc] initWithFrame:CGRectMake(65, 55, 18, 15)];
+            [ansI setImage:[UIImage imageNamed:@"wall_com_icon.png"]];
+            
+            ans=[[UILabel alloc] initWithFrame:CGRectMake(87, 49, 30, 25)];
+            ans.font=[UIFont systemFontOfSize:10];
+            ans.backgroundColor=[UIColor clearColor];
+            ans.textColor=[UIColor grayColor];
+            
+            time=[[UILabel alloc] initWithFrame:CGRectMake(5, 65, 310, 25)];
+            time.font=[UIFont systemFontOfSize:10];
+            time.backgroundColor=[UIColor clearColor];
+            time.textColor=[UIColor grayColor];
+            time.textAlignment=UITextAlignmentRight;
+            
+           /* UIImageView *lovedI=[[UIImageView alloc] initWithFrame:CGRectMake(70, 80, 27, 22)];
+            [lovedI setImage:[UIImage imageNamed:@"heart_icon"]];
+            loved=[[UILabel alloc] initWithFrame:CGRectMake(103, 80, 50, 25)];
+            loved.font=[UIFont fontWithName:AUVBoldFont size:10];
+            loved.backgroundColor=[UIColor clearColor];
+            loved.textColor=[UIColor grayColor];
+            
+            followBtn=[UIButton buttonWithType:UIButtonTypeCustom];
+            followBtn.frame=CGRectMake(200, 75, 115, 30);
+            
+            [followBtn setBackgroundImage:[UIImage imageNamed:@"blue_btn"] forState:UIControlStateNormal];
+            
+            //[followBtn setTitle:@"Follow" forState:UIControlStateNormal];
+            
+            [followBtn addTarget:self action:@selector(followAction:) forControlEvents:UIControlEventTouchUpInside];*/
+            
+            
+            UIImageView *line=[[UIImageView alloc] initWithFrame:CGRectMake(0, 90, 320, 2)];
+            line.image=[UIImage imageNamed:@"seprater"];
+            
+            [baseView addSubview:qHeader];
+            [baseView addSubview:name];
+            [baseView addSubview:icon];
+            [baseView addSubview:ansI];
+          //  [baseView addSubview:lovedI];
+            [baseView addSubview:ans];
+            [baseView addSubview:loved];
+            [baseView addSubview:line];
+            [baseView addSubview:time];
+            [cell addSubview:baseView];
+          //  [cell addSubview:followBtn];
+        }
+        
+        
+        
+        /*
+        name.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"username"]];
+        name.tag=[[[tableArray objectAtIndex:indexPath.row] valueForKey:@"user_id"] integerValue];
+        comment.text=[[tableArray objectAtIndex:indexPath.row] valueForKey:@"comment"];
+        time.text=[[tableArray objectAtIndex:indexPath.row] valueForKey:@"added_time"];
+        
+        */
+        ////NSLog(@"%@",[tableArray objectAtIndex:indexPath.row]);
+        
+         name.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"firstname"]];
+        
+        time.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"added_date"]];
+        
+        qHeader.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"question"]];
+        
+        ans.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"answer_count"]];
+        loved.text=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"questionlike_count"]];
+        [icon setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"picture"]]] placeholderImage:[UIImage imageNamed:@"placeholder"]];
+        followBtn.tag=indexPath.row;
+        if([[[tableArray objectAtIndex:indexPath.row] valueForKey:@"question_follow"] boolValue])
+            [followBtn setTitle:@"Unfollow" forState:UIControlStateNormal];
+        else [followBtn setTitle:@"Follow" forState:UIControlStateNormal];
+        cell.selectionStyle=UITableViewCellSelectionStyleNone;
+
+        
+
+    }
+    return cell;
+    
+}
+
+
+
+
+/*
+ - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+ return [NSString stringWithFormat:@"Section %d", section];
+ }
+ */
+
+
+-(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+    if(self.type==Comment)
+    {
+        AUVDevsViewController *profile=[[AUVDevsViewController alloc] initWithNibName:@"AUVProfileViewController" bundle:nil type:AUVTYPEPROFILE];
+        profile.userId=[[tableArray objectAtIndex:indexPath.row] valueForKey:@"user_id"];
+        
+        //if([[[tableArray objectAtIndex:indexPath.row] valueForKey:@"follow"] boolValue])
+        profile.follow=1;
+        
+        [self.navigationController pushViewController:profile animated:YES];
+   
+    }
+    else{
+    AUVQuestionViewController *question=[[AUVQuestionViewController alloc] initWithNibName:@"AUVQuestionViewController" bundle:nil];
+        question.questionId=[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:indexPath.row] valueForKey:@"question_id"]];
+        question.info=[[NSMutableDictionary alloc] initWithDictionary:[tableArray objectAtIndex:indexPath.row]];
+        question.follow=[[[tableArray objectAtIndex:indexPath.row] valueForKey:@"question_follow"] boolValue];
+        
+        [self.navigationController pushViewController:question animated:YES];
+        
+    
+    }
+}
+
+
+-(CGFloat)tableView:(UITableView*)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    
+    if(self.type==Comment)
+    return 95;
+    else if(self.type==question)
+        return 95;
+}
+
+
+
+-(void)addAnswer:(id)sender
+//-(IBAction)addAnswer
+{
+    AUVAnswerViewController *panel;
+    if(self.type==Comment){
+    
+   panel =[[AUVAnswerViewController alloc] initWithFrame:self.view.bounds withType:TypeCmt];
+    }
+    else
+        panel =[[AUVAnswerViewController alloc] initWithFrame:self.view.bounds withType:TypeQn];
+
+    panel.delegate=self;
+    panel.parent=self;
+    
+    [self.view addSubview:panel];
+    [panel showFromPoint:[self.view center]];
+}
+
+
+
+
+-(void)followAction:(id)sender
+{
+   [SVProgressHUD showWithMaskType:SVProgressHUDMaskTypeBlack];
+    AUVwebservice *service=[AUVwebservice service];
+    //service.logging=NO;
+    int index=[sender tag];
+    if(![[[tableArray objectAtIndex:index] valueForKey:@"question_follow"] boolValue])
+    {
+        [service follow_question:self action:@selector(followActionHandler:) user_id:[AUVLogin valueforKey:@"user_id"] question_id:[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:index] valueForKey:@"question_id"]]];
+    }
+    else{
+        [service unfollow_question:self action:@selector(followActionHandler:) user_id:[AUVLogin valueforKey:@"user_id"] question_id:[NSString stringWithFormat:@"%@",[[tableArray objectAtIndex:index] valueForKey:@"question_id"]]];
+    }
+}
+
+-(void)followActionHandler:(id)value
+{
+    if([value isKindOfClass:[NSError class]] ||([value isKindOfClass:[SoapFault class]])) {
+        
+		[SVProgressHUD showErrorWithStatus:@"Sorry, the request was unsuccessful"];
+	}
+    
+
+
+    else{
+    SoapArray *arr=(SoapArray*)value;
+   // //NSLog(@"%@",arr);
+    [self loadComments];
+    }
+   // [self loadAnswers:nil];
+}
+
+
+@end

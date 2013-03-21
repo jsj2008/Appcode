@@ -1,0 +1,195 @@
+//
+//  AUVQuestionChoiceViewController.m
+//  AppUniv
+//
+//  Created by Jagadeesh Deivasigamani on 02/11/12.
+//
+//
+
+#import "AUVQuestionChoiceViewController.h"
+#import "AUVAddQuestionViewController.h"
+#import "AUVSearchViewController.h"
+#import "AUVQuestionSearchViewController.h"
+#import "AUVCustomTabbar.h"
+#import "AUVAppWallController.h"
+#import "AUVNotificationViewController.h"
+#import "AUVDevsViewController.h"
+#import "AUVDealsViewController.h"
+#import "AUVMyQuestionAnsAnswerViewController.h"
+
+@interface AUVQuestionChoiceViewController ()
+
+@end
+
+@implementation AUVQuestionChoiceViewController
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    
+   // addaquestionforcategory.hidden=YES;
+    self.navigationItem.title=@"Add Discussion";
+    self.navigationItem.backBarButtonItem =
+    [[UIBarButtonItem alloc] initWithTitle:@"Back"
+                                     style:UIBarButtonItemStyleBordered
+                                    target:nil
+                                    action:nil];
+    [addaquestionforapp addTarget:self action:@selector(addQuestion:) forControlEvents:UIControlEventTouchUpInside];
+    addaquestionforapp.tag=1;
+    
+    
+    [addaquestionforcategory addTarget:self action:@selector(addQuestion:) forControlEvents:UIControlEventTouchUpInside];
+    addaquestionforcategory.tag=2;
+    
+    addaquestionforapp.backgroundColor=[UIColor colorWithPatternImage:[UIImage imageNamed:@"navigation_bg.png"]];
+    
+    addaquestionforapp.layer.cornerRadius=5.0f;
+    
+    addaquestionforcategory.backgroundColor=[UIColor colorWithPatternImage:[UIImage imageNamed:@"navigation_bg.png"]];
+    
+    addaquestionforcategory.layer.cornerRadius=5.0f;
+    
+    [myquestionandanswer addTarget:self action:@selector(addQuestion:) forControlEvents:UIControlEventTouchUpInside];
+    myquestionandanswer.tag=3;
+    
+    myquestionandanswer.backgroundColor=[UIColor colorWithPatternImage:[UIImage imageNamed:@"navigation_bg.png"]];
+    
+    myquestionandanswer.layer.cornerRadius=5.0f;
+
+    
+    
+    
+    AUVCustomTabbar *custombar  =[[AUVCustomTabbar alloc]init];
+    [custombar.button3 setImage:[UIImage imageNamed:@"tap_dplus3.png"] forState:UIControlStateNormal];
+
+    custombar.delegate= self;
+    
+    [self.view addSubview:custombar];
+    
+}
+-(void)viewWillAppear:(BOOL)animated
+{
+    //[self.navigationItem setHidesBackButton:YES];
+    
+    [super viewWillAppear:animated];
+    
+    
+}
+-(void)viewDidAppear:(BOOL)animated
+{
+    
+}
+
+- (void)viewDidUnload
+{
+    [super viewDidUnload];
+    // Release any retained subviews of the main view.
+    // e.g. self.myOutlet = nil;
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+-(void)addQuestion:(id)sender
+{
+    if ([sender tag] == 2)
+    {
+        
+        AUVAddQuestionViewController *obj=[[AUVAddQuestionViewController alloc] initWithNibName:@"AUVAddQuestionViewController" bundle:nil];
+        obj.questiontype=@"category";
+        
+        [self.navigationController pushViewController:obj animated:YES];
+    }
+    else if ([sender tag] == 1)
+    {
+     
+        
+        AUVAddQuestionViewController *obj=[[AUVAddQuestionViewController alloc] initWithNibName:@"AUVAddQuestionViewController" bundle:nil];
+        obj.questiontype=@"app";
+        
+        [self.navigationController pushViewController:obj animated:YES];
+    }else if([sender tag]==3)
+    {
+        AUVMyQuestionAnsAnswerViewController *myquesandans=[[AUVMyQuestionAnsAnswerViewController alloc]initWithNibName:@"AUVMyQuestionAnsAnswerViewController" bundle:nil];
+        [self.navigationController pushViewController:myquesandans animated:YES];
+    }
+}
+- (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar
+{
+    
+
+    AUVQuestionSearchViewController *searchView=[[AUVQuestionSearchViewController alloc] initWithNibName:@"AUVQuestionSearchViewController" bundle:nil];
+  
+    
+    [self.navigationController pushViewController:searchView animated:YES];
+    return NO;
+}
+
+-(BOOL)searchBarShouldEndEditing:(UISearchBar*)searchBar
+{
+    //[searchController setActive:NO];
+    return YES;
+}
+-(void)btnTap:(UIButton*)buttonId
+
+{
+
+    
+    int buttonselect = buttonId.tag;
+    
+    if (buttonselect == 1) {
+        
+        AUVAppWallController *notification = [[AUVAppWallController alloc]initWithNibName:@"AUVAppWallController_iPhone" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 2){
+       
+        AUVNotificationViewController *notification = [[AUVNotificationViewController alloc]initWithNibName:@"AUVNotificationViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+       
+        
+    }else if (buttonselect == 3){
+         //NSLog(@"same View");
+        
+    }else if (buttonselect == 4){
+        
+        AUVSearchViewController *notification = [[AUVSearchViewController alloc]initWithNibName:@"AUVSearchViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 5){
+        
+        
+        AUVDealsViewController *deal=[[AUVDealsViewController alloc]initWithNibName:@"AUVDealsViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:deal animated:YES];
+    }
+    
+    
+    
+    else{
+        
+        //NSLog(@"nothing");
+        
+    }
+    
+}
+
+
+
+@end

@@ -1,0 +1,412 @@
+//
+//  AUVSettingsViewController.m
+//  AppUniv
+//
+//  Created by Jagadeesh Deivasigamani on 18/08/12.
+//
+//
+
+#import "AUVSettingsViewController.h"
+#import <QuartzCore/QuartzCore.h>
+#import "UIImageView+AFNetworking.h"
+#import "AUVUserProfileViewController.h"
+#import "AUVwebservice.h"
+#import "AUVLogin.h"
+#import "JSON.h"
+#import "AUVPasswordViewController.h"
+#import "AUVNotificationViewController.h"
+
+#import "AUVCustomTabbar.h"
+#import "AUVAppWallController.h"
+#import "AUVNotificationViewController.h"
+#import "AUVQuestionChoiceViewController.h"
+#import "AUVSearchViewController.h"
+#import "AUVDealsViewController.h"
+#import "SVProgressHUD.h"
+@interface AUVSettingsViewController ()
+
+@end
+
+@implementation AUVSettingsViewController
+
+NSMutableDictionary *usr;
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    self.navigationItem.backBarButtonItem =
+    [[UIBarButtonItem alloc] initWithTitle:@"Back"
+                                     style:UIBarButtonItemStyleBordered
+                                    target:nil
+                                    action:nil];
+    [super viewDidLoad];
+    [self performSelectorOnMainThread:@selector(loadProfile) withObject:nil waitUntilDone:NO];
+    self.navigationController.navigationBarHidden=NO;
+   // self.navigationController.navigationBar.tintColor=[UIColor blackColor];
+    self.navigationItem.title=@"Settings";
+   
+  //  CALayer *layer = settings.layer;
+    
+    usr=[[NSMutableDictionary alloc] init];
+     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"ButtonMenu.png"]  style:UIBarButtonItemStyleBordered target:self.navigationController.parentViewController action:@selector(revealToggle:)];
+    settings.layer.borderColor = [[UIColor grayColor] CGColor];
+    settings.layer.borderWidth = 1.0f;
+    //layer.cornerRadius = 20.0f;
+    
+    settings.layer.cornerRadius=10;
+    baseView.layer.cornerRadius=10;
+  
+    UIBezierPath *shadowPath = [UIBezierPath bezierPathWithRoundedRect:baseView.bounds byRoundingCorners:UIRectCornerAllCorners cornerRadii:CGSizeMake(10, 10)];
+	baseView.layer.masksToBounds = NO;
+	baseView.layer.shadowColor = [UIColor blackColor].CGColor;
+	baseView.layer.shadowOffset = CGSizeMake(0.0f, 0.0f);
+	baseView.layer.shadowOpacity = 0.05f;
+	baseView.layer.shadowRadius = 1.0;
+	baseView.layer.shadowPath = shadowPath.CGPath;
+   // settings.layer.s
+  
+    AUVCustomTabbar *custombar  =[[AUVCustomTabbar alloc]init];
+    custombar.delegate= self;
+    
+    [self.view addSubview:custombar];
+    // Do any additional setup after loading the view from its nib.
+}
+
+-(void)btnTap:(UIButton*)buttonId
+
+{
+    
+    int buttonselect = buttonId.tag;
+    
+    if (buttonselect == 1) {
+        
+        AUVAppWallController *notification = [[AUVAppWallController alloc]initWithNibName:@"AUVAppWallController_iPhone" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 2){
+        
+        AUVNotificationViewController *notification = [[AUVNotificationViewController alloc]initWithNibName:@"AUVNotificationViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 3){
+        
+        AUVQuestionChoiceViewController *notification = [[AUVQuestionChoiceViewController alloc]initWithNibName:@"AUVQuestionChoiceViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 4){
+        
+        AUVSearchViewController *notification = [[AUVSearchViewController alloc]initWithNibName:@"AUVSearchViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:notification animated:YES];
+        
+    }else if (buttonselect == 5){
+        
+        AUVDealsViewController *deal=[[AUVDealsViewController alloc]initWithNibName:@"AUVDealsViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:deal animated:YES];
+    }
+    else{
+        
+        //NSLog(@"nothing");
+        
+    }
+    
+}
+
+- (void)viewDidUnload
+{
+    [super viewDidUnload];
+    // Release any retained subviews of the main view.
+    // e.g. self.myOutlet = nil;
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    
+    [super viewDidAppear:animated];
+    
+    
+    [self loadProfile];
+    
+    
+    
+}
+
+
+
+#pragma mark -
+#pragma mark UITableViewDataSource
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 2;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (section==1) {
+        return 1;
+    }
+    else
+    return 4;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+   UITableViewCell  *cell=nil;
+    
+    static NSString *identifier = @"defaultcell";
+    cell =(UITableViewCell*) [tableView dequeueReusableCellWithIdentifier:identifier];
+    
+    
+    
+    if (cell == nil)
+    {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+               
+         cell.textLabel.font=[UIFont systemFontOfSize:18];
+    }
+         if(indexPath.section==0)
+
+         {
+    
+    
+    if(indexPath.row==0)
+    {
+        
+        CGRect rect =[cell bounds];
+        
+        UIView *baseCell=[[UIView alloc] initWithFrame:rect];
+        
+        UIImageView *imageV=[[UIImageView alloc] initWithFrame:CGRectMake(10, 10, 80, 80)];
+        if(usr.count>0){
+    //   [imageV setImageWithURL:[NSURL URLWithString:@"https://fbcdn-profile-a.akamaihd.net/hprofile-ak-snc4/41736_771863010_2112689660_t.jpg"] placeholderImage:[UIImage imageNamed:@"placeholder"]];
+            
+            [imageV setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",[usr valueForKey:@"picture"]]] placeholderImage:[UIImage imageNamed:@"placeholder"]];
+        imageV.layer.cornerRadius=10;
+        imageV.layer.borderWidth=1.0;
+        imageV.clipsToBounds=YES;
+       // cell.textLabel.text=@"Contacts";
+       // cell.title2.text=@"Add friends from your contact list";
+        
+    
+        UILabel *userName=[[UILabel alloc] initWithFrame:CGRectMake(100, 10, 180, 30)];
+        userName.backgroundColor=[UIColor clearColor];
+        userName.text=[NSString stringWithFormat:@"%@",[usr valueForKey:@"username"]];
+        userName.textColor=[UIColor blackColor];
+        userName.font=[UIFont systemFontOfSize:15];
+        
+        UILabel *fullName=[[UILabel alloc] initWithFrame:CGRectMake(100, 50, 180, 30)];
+        fullName.backgroundColor=[UIColor clearColor];
+        fullName.text=[NSString stringWithFormat:@"%@ %@",[usr valueForKey:@"firstname"],[usr valueForKey:@"lastname"]];
+        fullName.textColor=[UIColor grayColor];
+        fullName.font=[UIFont systemFontOfSize:15];
+
+    
+        [baseCell addSubview:imageV];
+        [baseCell addSubview:userName];
+        [baseCell addSubview:fullName];
+        }
+        [cell addSubview:baseCell];
+        
+         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
+    }
+   /* if(indexPath.row==1)
+    {
+        cell.textLabel.text=@"Timeline";
+                
+    }*/
+    
+    if(indexPath.row==1)
+    {
+       cell.textLabel.text=@"Personal Info";
+       cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
+    }
+    
+   /* if(indexPath.row==2)
+    {
+       cell.textLabel.text=@"Email preferences";
+       cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
+               
+    }*/
+    
+    if(indexPath.row==2)
+    {
+      cell.textLabel.text=@"Change password";
+          cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
+    }
+    
+    if(indexPath.row==3)
+    {
+     cell.textLabel.text=@"Linked accounts";
+         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
+        
+    }
+    
+        return cell;
+
+    
+    }
+    else if(indexPath.section==1)
+    {
+        cell.selectionStyle=UITableViewCellSelectionStyleNone;
+        UILabel *donotdisturb=[[UILabel alloc] initWithFrame:CGRectMake(10, 10, 150, 45)];
+        donotdisturb.text=@"Push notifications";
+       // donotdisturb.font=[UIFont boldSystemFontOfSize:15.0f];
+        [cell addSubview:donotdisturb];
+        
+        UISwitch *sw=[[UISwitch alloc] initWithFrame:CGRectMake(200, 20, 100, 40)];
+      //  [sw inse]
+        sw.on=[[usr valueForKey:@"notification"] boolValue];
+        [sw addTarget:self action:@selector(changeSwitch:) forControlEvents:UIControlEventValueChanged];
+        [cell addSubview:sw];
+        
+        return cell;
+    }
+
+    
+}
+/*
+ - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+ return [NSString stringWithFormat:@"Section %d", section];
+ }
+ */
+
+-(CGFloat)tableView:(UITableView*)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if(indexPath.section==1) return 67;
+    if(indexPath.row==0) return 100;
+    return 47;
+    
+}
+
+
+-(void) tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    if(indexPath.section==1) return;
+    
+    if(indexPath.row==0)
+    {
+        AUVUserProfileViewController *profile=[[AUVUserProfileViewController alloc] initWithNibName:@"AUVUserProfileViewController" bundle:nil];
+        
+        profile.type=UserProfile;
+        [self.navigationController pushViewController:profile animated:YES];
+    }
+    
+    if(indexPath.row==1)
+    {
+       /* AUVNotificationViewController *notify=[[AUVNotificationViewController alloc] initWithNibName:@"AUVNotificationViewController" bundle:nil];
+        [self.navigationController pushViewController:notify animated:YES];*/
+        
+        AUVUserProfileViewController *profile=[[AUVUserProfileViewController alloc] initWithNibName:@"AUVUserProfileViewController" bundle:nil];
+        
+        profile.type=UserProfile;
+        [self.navigationController pushViewController:profile animated:YES];
+    }
+    if(indexPath.row==2)
+    {
+        AUVPasswordViewController *pass=[[AUVPasswordViewController alloc] initWithNibName:@"AUVPasswordViewController" bundle:nil];
+        
+        [self.navigationController pushViewController:pass animated:YES];
+    }
+    
+    if(indexPath.row==3)
+    {
+        AUVUserProfileViewController *profile=[[AUVUserProfileViewController alloc] initWithNibName:@"AUVUserProfileViewController" bundle:nil];
+        
+        profile.type=LinkedAccounts;
+        [self.navigationController pushViewController:profile animated:YES];
+    }
+
+}
+
+
+-(void)loadProfile
+{
+    AUVwebservice *service=[AUVwebservice service];
+    
+    [service get_user_profile:self action:@selector(loadProfileHandler:) user_id:[AUVLogin valueforKey:@"user_id"]];
+}
+
+-(void)loadProfileHandler:(id)value
+{
+    // Handle errors
+    if([value isKindOfClass:[NSError class]] ||([value isKindOfClass:[SoapFault class]])) {
+        
+		[SVProgressHUD showErrorWithStatus:@"Sorry, the request was unsuccessful"];
+	}
+    
+    else{
+    SoapArray *arr=(SoapArray*)value;
+    
+    
+   
+    NSString *result=[[NSString stringWithFormat:@"%@",[arr objectAtIndex:0]] stringByReplacingOccurrencesOfString:@"\\" withString:@""];
+     NSLog(@"Arr : %@",result);
+    
+    ////NSLog(@"%@",[[[result JSONValue] valueForKey:@"user_details"] objectAtIndex:0]);
+  [usr addEntriesFromDictionary:[[[result JSONValue] valueForKey:@"user_details"] objectAtIndex:0]];
+    
+    [settings reloadData];
+    }
+}
+
+-(IBAction)changeSwitch:(id)sender
+{
+    [SVProgressHUD showWithStatus:@"Please wait..."];
+    UISwitch *swi=(UISwitch*)sender;
+    
+    if(swi.on) [self updateDND:@"1"];
+    else  [self updateDND:@"0"];
+    
+}
+
+-(void)updateDND:(NSString*)notify
+{
+    NSLog(@"notify :%@ ",notify);
+    AUVwebservice *service=[AUVwebservice service];
+    //service.logging=YES;
+    [service update_PushNotification:self action:@selector(updateDNDHandler:) user_id:[AUVLogin valueforKey:@"user_id"] notification:notify];
+}
+
+-(void)updateDNDHandler:(id)value
+{
+    // Handle errors
+    if([value isKindOfClass:[NSError class]] ||([value isKindOfClass:[SoapFault class]])) {
+        
+		[SVProgressHUD showErrorWithStatus:@"Sorry, the request was unsuccessful"];
+	}
+    
+    else{
+        SoapArray *arr=(SoapArray*)value;
+        
+        
+        
+        
+        NSString *result=[[NSString stringWithFormat:@"%@",[arr objectAtIndex:0]] stringByReplacingOccurrencesOfString:@"\\" withString:@""];
+       // NSLog(@"Arr : %@",result);
+        
+        if([result boolValue]) 
+        [SVProgressHUD showSuccessWithStatus:@"Successfully updated."];
+        
+        else [SVProgressHUD dismiss];
+
+    }
+}
+@end

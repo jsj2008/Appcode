@@ -1,0 +1,67 @@
+10
+
+dir
+2
+https://subversion.assembla.com/svn/appsearch.2/trunk/three20/src
+https://subversion.assembla.com/svn/appsearch.2
+
+
+
+2013-02-14T10:44:58.746233Z
+2
+jagadeesheie
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+26502e8c-302f-4914-b1c4-b940cb72b013
+
+Three20
+dir
+
+Three20.bundle
+dir
+
+Three20Core
+dir
+
+Three20Network
+dir
+
+Three20Style
+dir
+
+Three20UI
+dir
+
+Three20UICommon
+dir
+
+Three20UINavigator
+dir
+
+common
+dir
+
+extThree20CSSStyle
+dir
+
+extThree20JSON
+dir
+
+extThree20XML
+dir
+
+scripts
+dir
+
